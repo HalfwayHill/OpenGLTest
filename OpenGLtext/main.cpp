@@ -3,6 +3,7 @@
 #define GLEW_STATIC
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
+#include "Shader.h"
 
 //triangle的顶点坐标,每行前3个浮点数为顶点坐标，后3个浮点数为顶点的颜色
 float vertices[] = {
@@ -19,6 +20,7 @@ unsigned int indices[] = {
 	2,1,3
 };
 
+/*
 //硬编码
 const char* vertexShaderSource =
 "#version 330 core                                           \n"
@@ -37,6 +39,8 @@ const char* fragmentShaderSource =
 "out vec4 FragColor;                                \n	  "
 "void main(){\n									    	  "
 "		FragColor = vertexColor;}  \n    ";
+*/
+
 
 //使用按ESC键结束窗口。
 //C++ 函数必须在方法声明前。（前置声明）
@@ -58,6 +62,7 @@ int main() {
 		//do nothing
 	}
 	*/
+
 	//初始化glfw,版本号3.3
 	//这段文档要阅读。
 	glfwInit();
@@ -98,6 +103,8 @@ int main() {
 	//线框模式
 	//glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
+	Shader* testShader = new Shader("vertexSource.txt", "fragmentSource.txt");
+
 	//创建VAO
 	unsigned int VAO;
 	//创建一个VAO（参数1），返还一个id放入声明的VAO中（参数2）,"&"符号是因为就创建1个。
@@ -121,25 +128,27 @@ int main() {
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
 	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
 
-	//vertexShader
-	unsigned int vertexShader;
-	vertexShader = glCreateShader(GL_VERTEX_SHADER);
-	glShaderSource(vertexShader, 1, &vertexShaderSource, NULL);
-	glCompileShader(vertexShader);
+	////vertexShader
+	//unsigned int vertexShader;
+	//vertexShader = glCreateShader(GL_VERTEX_SHADER);
+	//glShaderSource(vertexShader, 1, &vertexShaderSource, NULL);
+	//glCompileShader(vertexShader);
 
-	//fragmentShader
-	unsigned int fragmentShader;
-	fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
-	glShaderSource(fragmentShader, 1, &fragmentShaderSource, NULL);
-	glCompileShader(fragmentShader);
+	////fragmentShader
+	//unsigned int fragmentShader;
+	//fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
+	//glShaderSource(fragmentShader, 1, &fragmentShaderSource, NULL);
+	//glCompileShader(fragmentShader);
 
-	//Shader program
-	//将vertexShader和fragmentShader连接起来
-	unsigned int shaderProgram;
-	shaderProgram = glCreateProgram();
-	glAttachShader(shaderProgram, vertexShader);
-	glAttachShader(shaderProgram, fragmentShader);
-	glLinkProgram(shaderProgram);
+	////Shader program
+	////将vertexShader和fragmentShader连接起来
+	//unsigned int shaderProgram;
+	//shaderProgram = glCreateProgram();
+	//glAttachShader(shaderProgram, vertexShader);
+	//glAttachShader(shaderProgram, fragmentShader);
+	//glLinkProgram(shaderProgram);
+
+
 	//获取位置
 	//设置vertexattrib 0号栏位（参数1） 每3个栏位当成一份资料（参数2） 每个栏位都是一个浮点数（参数3）设置是否正规化（参数4） 每次获取完后要间隔多少再去获取（参数4） 第一笔资料要偏移多少获取（参数5）  
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);
@@ -165,14 +174,17 @@ int main() {
 		glBindVertexArray(VAO);
 		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
 		//从CPU拿到时间，让其通过uniform传递到着色器上，使其颜色随时间变换。
-		float timeValue = glfwGetTime();
+		/*float timeValue = glfwGetTime();
 		float greenValue = (sin(timeValue) / 2.0f) + 0.5f;
 		int vertexColorLocation = glGetUniformLocation(shaderProgram, "ourColor");
 
 		glUseProgram(shaderProgram);
 
-		glUniform4f(vertexColorLocation, 0, greenValue, 0, 1.0f);
-		//一个三角形，3个顶点，如果想绘制四边形，其中两个顶点要重新绘制，这样就要绘制6个顶点，会浪费性能，所以可以使用EBO
+		glUniform4f(vertexColorLocation, 0, greenValue, 0, 1.0f);*/
+
+		testShader->use();
+
+		//VBO 一个三角形，3个顶点，如果想绘制四边形，其中两个顶点要重新绘制，这样就要绘制6个顶点，会浪费性能，所以可以使用EBO
 		//glDrawArrays(GL_TRIANGLES, 0, 6);
 		//使用EBO/IBO绘制
 		glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
