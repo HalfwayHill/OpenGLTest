@@ -5,19 +5,22 @@
 #include <GLFW/glfw3.h>
 #include "Shader.h"
 
+#define STB_IMAGE_IMPLEMENTATION
+#include "stb_image.h"
+
 //triangle的顶点坐标,每行前3个浮点数为顶点坐标，后3个浮点数为顶点的颜色
 float vertices[] = {
-	-0.5f,-0.5f,0.0f,1.0f,0,0, //0
-	0.5f,-0.5f,0.0f,0,1.0f,0,  //1
-	0.0f,0.5f,0.0f,0,0,1.0f,   //2
-	//0.5f,-0.5f,0.0f,
-	//0.0f,0.5f,0.0f,
-	0.8f,0.8f,0.0f,1.0f,0,1.0f     //3
+	//     ---- 位置 ----       ---- 颜色 ----     - 纹理坐标(UV值) -
+		 0.5f,  0.5f, 0.0f,   1.0f, 0.0f, 0.0f,   1.0f, 1.0f,   // 右上
+		 0.5f, -0.5f, 0.0f,   0.0f, 1.0f, 0.0f,   1.0f, 0.0f,   // 右下
+		-0.5f, -0.5f, 0.0f,   0.0f, 0.0f, 1.0f,   0.0f, 0.0f,   // 左下
+		-0.5f,  0.5f, 0.0f,   1.0f, 1.0f, 0.0f,   0.0f, 1.0f    // 左上
 };
 //使用EBO（IBO）进行绘制，需要顶点坐标的索引
 unsigned int indices[] = {
+	//逆时针才是正面
 	0,1,2,
-	2,1,3
+	2,3,0
 };
 
 /*
@@ -151,12 +154,56 @@ int main() {
 
 	//获取位置
 	//设置vertexattrib 0号栏位（参数1） 每3个栏位当成一份资料（参数2） 每个栏位都是一个浮点数（参数3）设置是否正规化（参数4） 每次获取完后要间隔多少再去获取（参数4） 第一笔资料要偏移多少获取（参数5）  
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)0);
 	//打开vertexattrib 0
 	glEnableVertexAttribArray(0);
 	//获取颜色，因为有了颜色RGB三个浮点数，所以要跳6个
-	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3 * sizeof(float)));
+	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(3 * sizeof(float)));
 	glEnableVertexAttribArray(1);
+	//UV值
+	glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(6 * sizeof(float)));
+	glEnableVertexAttribArray(2);
+
+	//加载纹理，获取纹理属性，进行设置
+	unsigned int TexBufferA;
+	glGenTextures(1, &TexBufferA);
+	//将纹理A放入0号栏位
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D, TexBufferA);
+
+	int width, height, nrChannel;
+	stbi_set_flip_vertically_on_load(true);
+	unsigned char *data = stbi_load("ourTexture.jpg", &width, &height, &nrChannel, 0);
+	if (data)
+	{
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
+		//使用多层次纹理（Mipmap）
+		glGenerateMipmap(GL_TEXTURE_2D);
+	}
+	else
+	{
+		printf("load image failed.");
+	}
+	stbi_image_free(data);
+	//纹理B
+	unsigned int TexBufferB;
+	glGenTextures(1, &TexBufferB);
+	//将纹理A放入3号栏位
+	glActiveTexture(GL_TEXTURE3);
+	glBindTexture(GL_TEXTURE_2D, TexBufferB);
+
+	unsigned char *data2 = stbi_load("awesomeface.png", &width, &height, &nrChannel, 0);
+	if (data2)
+	{
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, data2);
+		//使用多层次纹理（Mipmap）
+		glGenerateMipmap(GL_TEXTURE_2D);
+	}
+	else
+	{
+		printf("load image failed.");
+	}
+	stbi_image_free(data2);
 
 	//Ready your engines
 	//判断window是否被关闭，进行渲染。
@@ -171,6 +218,12 @@ int main() {
 		glClearColor(0, 0.5f, 0.5f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT);
 
+		//应用纹理
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_2D, TexBufferA);
+		glActiveTexture(GL_TEXTURE3);
+		glBindTexture(GL_TEXTURE_2D, TexBufferB);
+
 		glBindVertexArray(VAO);
 		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
 		//从CPU拿到时间，让其通过uniform传递到着色器上，使其颜色随时间变换。
@@ -183,6 +236,9 @@ int main() {
 		glUniform4f(vertexColorLocation, 0, greenValue, 0, 1.0f);*/
 
 		testShader->use();
+
+		glUniform1i(glGetUniformLocation(testShader->ID, "ourTexture"), 0);
+		glUniform1i(glGetUniformLocation(testShader->ID, "ourFace"), 3);
 
 		//VBO 一个三角形，3个顶点，如果想绘制四边形，其中两个顶点要重新绘制，这样就要绘制6个顶点，会浪费性能，所以可以使用EBO
 		//glDrawArrays(GL_TRIANGLES, 0, 6);

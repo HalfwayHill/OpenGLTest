@@ -34,4 +34,12 @@
     <Text Include="vertexSource.txt" />
     <Text Include="fragmentSource.txt" />
   </ItemGroup>
+  <ItemGroup>
+    <Image Include="ourTexture.jpg">
+      <Filter>资源文件</Filter>
+    </Image>
+    <Image Include="awesomeface.png">
+      <Filter>资源文件</Filter>
+    </Image>
+  </ItemGroup>
 </Project>
