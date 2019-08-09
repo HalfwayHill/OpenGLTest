@@ -8,6 +8,10 @@
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
 
+#include <glm.hpp>
+#include <gtc/matrix_transform.hpp>
+#include <gtc/type_ptr.hpp>
+
 //triangle的顶点坐标,每行前3个浮点数为顶点坐标，后3个浮点数为顶点的颜色
 float vertices[] = {
 	//     ---- 位置 ----       ---- 颜色 ----     - 纹理坐标(UV值) -
@@ -205,11 +209,44 @@ int main() {
 	}
 	stbi_image_free(data2);
 
+	//calculate our transformation matrix here
+
+	glm::mat4 trans;
+	//平移0.01
+	//trans = glm::translate(trans, glm::vec3(-0.1f, 0.0f, 0.0f));
+	//旋转45度
+	//trans = glm::rotate(trans, glm::radians(45.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+	//缩放
+	//trans = glm::scale(trans, glm::vec3(2.0f, 2.0f, 2.0f));
+
+    //Mt : transpose 位移
+	//Mr : rotate 旋转
+	//Ms : scale 缩放
+
+	//V : 顶点位置（列主序 : 以一列矩阵为主要方式）
+
+	//V = （Mt * Mr * Ms）* V  这三者的顺序不能颠倒，因为矩阵不适用交换律 若顺序颠倒的话变成了世界坐标系
+
+	//这样就进行旋转90度，缩放0.5倍
+	/*trans = glm::rotate(trans, glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+	trans = glm::scale(trans, glm::vec3(0.5f, 0.5f, 0.5f));*/
+
+
 	//Ready your engines
 	//判断window是否被关闭，进行渲染。
 	//这段文档要阅读。
 	while (!glfwWindowShouldClose(window))
 	{
+		//这样的话，每次会向左移动0.01,一整个窗口为（-1——1）
+		//trans = glm::translate(trans, glm::vec3(-0.01f, 0.0f, 0.0f));
+		//trans = glm::rotate(trans, glm::radians(5.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+		//trans = glm::scale(trans, glm::vec3(1.02f, 1.02f, 1.02f));
+
+		//通过CPU传递时间，让时间变成弧度，使图像随时间旋转
+		/*glm::mat4 trans;
+		trans = glm::translate(trans, glm::vec3(0.5f, -0.5f, 0.0f));
+		trans = glm::rotate(trans, (float)glfwGetTime(), glm::vec3(0.0f, 0.0f, 1.0f));*/
+
 		// input
 		processInput(window);
 
@@ -239,6 +276,8 @@ int main() {
 
 		glUniform1i(glGetUniformLocation(testShader->ID, "ourTexture"), 0);
 		glUniform1i(glGetUniformLocation(testShader->ID, "ourFace"), 3);
+
+		glUniformMatrix4fv(glGetUniformLocation(testShader->ID, "transform"), 1, GL_FALSE, glm::value_ptr(trans));
 
 		//VBO 一个三角形，3个顶点，如果想绘制四边形，其中两个顶点要重新绘制，这样就要绘制6个顶点，会浪费性能，所以可以使用EBO
 		//glDrawArrays(GL_TRIANGLES, 0, 6);
